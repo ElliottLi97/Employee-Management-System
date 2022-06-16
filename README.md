@@ -25,7 +25,7 @@ Fork this repository, open the terminal in the folder containing the project fil
 <a name="Usage-Information"></a>   
 ## Usage Information
 Open the terminal in the folder containing the project files, run the command "node index.js", and use arrow keys to navigate the prompts while following the prompts' instructions. 
-A video for using the project can be found [here](https://youtu.be/8cL33OqZoUo).
+A video for using the project can be found [here](https://youtu.be/tlF5hz8OM2A).
 
 <a name="Test"></a>
 ## Tests
