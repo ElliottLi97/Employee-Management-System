@@ -1,5 +1,6 @@
 const inquirer = require('inquirer')
 const mysql = require('mysql2');
+const cTable = require('console.table');
 
 const db = mysql.createConnection(
     {
@@ -28,76 +29,19 @@ const start = () => {
         .then(choice => {
             const { choices } = choice
             if (choices === "View all departments") {
-                db.query('SELECT * FROM department', function (err, results) {
-                    if (err) throw err
-                    else {
-                        console.log("id     department \n--     --------------")
-                        results.forEach(department => console.log(`${department.id}      ${department.name}`));
-                    }
-                    return start()
-                });
+                viewAllDepartments()
             }
             if (choices === "View all roles") {
-                db.query('SELECT role.id as id, role.title as title, role.salary as salary, department.name as department From role JOIN department ON role.department_id = department.id;', function (err, results) {
-                    if (err) throw err
-                    else {
-                        console.log("id   title           salary     department \n--   ------------    -------    -------")
-                        results.forEach(role => {
-                            const titleSpace = role.title.length
-                            const salarySpace = role.salary.length
-                            console.log(role.id, "  ", role.title, spacing(14 - titleSpace), role.salary, spacing(9 - salarySpace), role.department)
-                        });
-                    }
-                    return start()
-                });
+                viewAllRoles()
             }
             if (choices === "View all employees") {
-                db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, department.name as department, role.salary as salary, employee.id as manager From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id', function (err, results) {
-                    if (err) throw err
-                    else {
-                        console.log("id   name            title           department        salary    manager\n--   -------------   -------------   ---------------   --------  -----")
-                        results.forEach(employee => {
-                            const nameSpace = employee.first_name.length + employee.last_name.length
-                            const titleSpace = employee.title.length
-                            const departmentSpace = employee.department.length
-                            const salarySpace = employee.salary.length
-                            console.log(employee.id, "  ", employee.first_name + " " + employee.last_name, spacing(13 - nameSpace), employee.title, spacing(14 - titleSpace), employee.department, spacing(16 - departmentSpace), employee.salary, spacing(8 - salarySpace), employee.manager)
-                        });
-                    }
-                    return start()
-                });
+                viewAllEmployees()
             }
             if (choices === "View employees by manager") {
-                db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, department.name as department, role.salary as salary, employee.id as manager From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id ORDER BY department ASC', function (err, results) {
-                    if (err) throw err
-                    else {
-                        console.log("id   name            title           department        salary    manager\n--   -------------   -------------   ---------------   --------  -----")
-                        results.forEach(employee => {
-                            const nameSpace = employee.first_name.length + employee.last_name.length
-                            const titleSpace = employee.title.length
-                            const departmentSpace = employee.department.length
-                            const salarySpace = employee.salary.length
-                            console.log(employee.id, "  ", employee.first_name + " " + employee.last_name, spacing(13 - nameSpace), employee.title, spacing(14 - titleSpace), employee.department, spacing(16 - departmentSpace), employee.salary, spacing(8 - salarySpace), employee.manager)
-                        });
-                    }
-                    return start()
-                });
+                viewAllEmployeesByManager()
             }
             if (choices === "View employees by department") {
-                db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, employee.id as manager, role.salary as salary, department.name as department From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id ORDER BY department ASC', function (err, results) {
-                    if (err) throw err
-                    else {
-                        console.log("id   name            title           department        salary    manager\n--   -------------   -------------   ---------------   --------  -----")
-                        results.forEach(employee => {
-                            const nameSpace = employee.first_name.length + employee.last_name.length
-                            const titleSpace = employee.title.length
-                            const departmentSpace = employee.department.length
-                            const salarySpace = employee.salary.length
-                            console.log(employee.id, "  ", employee.first_name + " " + employee.last_name, spacing(13 - nameSpace), employee.title, spacing(14 - titleSpace), employee.department, spacing(16 - departmentSpace), employee.salary, spacing(8 - salarySpace), employee.manager)
-                        });
-                    }
-                    return start()
-                });
+                viewAllEmployeesByDepartment()
             }
             if (choices === "Add a department") {
                 inquirer.prompt([
@@ -165,88 +109,19 @@ const start = () => {
                 })
             }
             if (choices === "Add an employee") {
-                AddAnEmployee()
-                
+                AddAnEmployee()  
             }
             if (choices === "Update an employee role") {
                 UpdateAnEmployeeByRole()
-                
             }
             if (choices === "Delete employees") {
-                let employeelist = listEmployeeNames()
-                employeelist.then(function (result) {
-                    inquirer.prompt([
-                        {
-                            type: "list",
-                            name: "employeeName",
-                            message: "Select an employee to delete",
-                            choices: result
-                        }
-                    ])
-                        .then(choice => {
-                            const { employeeName } = choice
-                            splitName = employeeName.split(' ')
-                            db.query(`DELETE FROM employee WHERE first_name = ?`, splitName[0], (err, result) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-                                else console.log(`${employeeName} has been removed`);
-                                return start()
-                            });
-
-                        })
-                })
-
+                deleteEmployee()
             }
             if (choices === "Delete departments") {
-                let employeelist = listDepartments()
-                employeelist.then(function (result) {
-                    inquirer.prompt([
-                        {
-                            type: "list",
-                            name: "department",
-                            message: "Select department to delete",
-                            choices: result
-                        }
-                    ])
-                        .then(choice => {
-                            const { department } = choice
-                            db.query(`DELETE FROM department WHERE name = ?`, department, (err, result) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-                                else console.log(`The ${department} department has been removed`);
-                                return start()
-                            });
-
-                        })
-                })
-
+                deleteDepartment()
             }
             if (choices === "Delete roles") {
-                let employeelist = listRoles()
-                employeelist.then(function (result) {
-                    inquirer.prompt([
-                        {
-                            type: "list",
-                            name: "role",
-                            message: "Select a role to delete",
-                            choices: result
-                        }
-                    ])
-                        .then(choice => {
-                            const { role } = choice
-                            db.query(`DELETE FROM role WHERE title = ?`, role, (err, result) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-                                else console.log(`The ${role} role has been removed`);
-                                return start()
-                            });
-
-                        })
-                })
-
+                deleteRole()
             }
             if (choices === "Update employee manager") {
                 UpdateAnEmployeeByManager()
@@ -257,7 +132,7 @@ const start = () => {
         })
 }
 
-start()
+
 
 function spacing(length) {
     space = ""
@@ -266,7 +141,6 @@ function spacing(length) {
     }
     return space
 }
-
 function listEmployeeNames() {
     return new Promise((resolve, reject) => {
         db.query('Select * FROM employee', function (err, results) {
@@ -282,7 +156,6 @@ function listEmployeeNames() {
         })
     })
 }
-
 function listDepartments() {
     return new Promise((resolve, reject) => {
         db.query('Select * FROM department', function (err, results) {
@@ -297,7 +170,6 @@ function listDepartments() {
         })
     })
 }
-
 function listRoles() {
     return new Promise((resolve, reject) => {
         db.query('Select * FROM role', function (err, results) {
@@ -312,7 +184,6 @@ function listRoles() {
         })
     })
 }
-
 function getDepartmentIdByName(department) {
     return new Promise((resolve, reject) => {
         db.query(`Select id FROM department WHERE name = ?`, department, (err, result) => {
@@ -325,7 +196,6 @@ function getDepartmentIdByName(department) {
         });
     })
 }
-
 async function createEmployee(first_name, last_name, roleTitle, managerName) {
     const roleId = await getRoleIdByTitle(roleTitle)
     const managerId = await getEmployeeIdByName(managerName)
@@ -343,7 +213,6 @@ async function createEmployee(first_name, last_name, roleTitle, managerName) {
     })
 
 }
-
 function getRoleIdByTitle(title) {
     return new Promise((resolve, reject) => {
         db.query(`Select id FROM role WHERE title = ?`, title, (err, result) => {
@@ -356,7 +225,6 @@ function getRoleIdByTitle(title) {
         });
     })
 }
-
 function getEmployeeIdByName(employeeName) {
     return new Promise((resolve, reject) => {
         splitName = employeeName.split(' ')
@@ -370,7 +238,6 @@ function getEmployeeIdByName(employeeName) {
         });
     })
 }
-
 async function AddAnEmployee() {
     const roles = await listRoles();
     const managers = await listEmployeeNames();
@@ -406,7 +273,6 @@ async function AddAnEmployee() {
             
         })
 }
-
 async function UpdateAnEmployeeByManager() {
     const managers = await listEmployeeNames();
     inquirer.prompt([
@@ -430,7 +296,6 @@ async function UpdateAnEmployeeByManager() {
         })
 
 }
-
 async function updateEmployeeManager(employeeName, managerName) {
     const employeeId = await getEmployeeIdByName(employeeName)
     const managerId = await getEmployeeIdByName(managerName)
@@ -446,7 +311,6 @@ async function updateEmployeeManager(employeeName, managerName) {
     })
 
 }
-
 async function UpdateAnEmployeeByRole() {
     const roles = await listRoles()
     const managers = await listEmployeeNames();
@@ -471,7 +335,6 @@ async function UpdateAnEmployeeByRole() {
         })
 
 }
-
 async function updateEmployeeRole(employeeName, roleTitle) {
     const employeeId = await getEmployeeIdByName(employeeName)
     const roleId = await getRoleIdByTitle(roleTitle)
@@ -487,3 +350,127 @@ async function updateEmployeeRole(employeeName, roleTitle) {
     })
 
 }
+function viewAllDepartments(){
+    db.query('SELECT * FROM department', function (err, results) {
+        if (err) throw err
+        else {
+
+            consoleTable(results)
+        }
+        return start()
+    });
+}
+function viewAllRoles(){
+    db.query('SELECT role.id as id, role.title as title, role.salary as salary, department.name as department From role JOIN department ON role.department_id = department.id;', function (err, results) {
+        if (err) throw err
+        else {
+            consoleTable(results)
+        }
+        return start()
+    });
+}
+function viewAllEmployees(){
+    db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, department.name as department, role.salary as salary, employee.id as manager From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id', function (err, results) {
+        if (err) throw err
+        else {
+            consoleTable(results)
+        }
+        return start()
+    });
+}
+function viewAllEmployeesByManager(){
+    db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, department.name as department, role.salary as salary, employee.id as manager From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id ORDER BY department DESC', function (err, results) {
+        if (err) throw err
+        else {
+            consoleTable(results)
+        }
+        return start()
+    });
+}
+function viewAllEmployeesByDepartment(){                
+    db.query('SELECT employee.id as id, employee.first_name as first_name, employee.last_name as last_name, role.title as title, employee.id as manager, role.salary as salary, department.name as department From employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id=department.id ORDER BY department DESC', function (err, results) {
+    if (err) throw err
+    else {
+        consoleTable(results)
+    }
+    return start()
+});}
+async function deleteEmployee(){
+    let employeelist = await listEmployeeNames()
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "employeeName",
+                message: "Select an employee to delete",
+                choices: employeelist
+            }
+        ])
+            .then(choice => {
+                const { employeeName } = choice
+                splitName = employeeName.split(' ')
+                db.query(`DELETE FROM employee WHERE first_name = ?`, splitName[0], (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else console.log(`${employeeName} has been removed`);
+                    return start()
+                });
+
+            })
+
+
+}
+async function deleteDepartment(){
+    let employeelist = await listDepartments()
+    
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "department",
+                message: "Select department to delete",
+                choices: employeelist
+            }
+        ])
+            .then(choice => {
+                const { department } = choice
+                db.query(`DELETE FROM department WHERE name = ?`, department, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else console.log(`The ${department} department has been removed`);
+                    return start()
+                });
+
+            })
+}
+async function deleteRole(){
+    let employeelist = await listRoles()
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "role",
+                message: "Select a role to delete",
+                choices: employeelist
+            }
+        ])
+            .then(choice => {
+                const { role } = choice
+                db.query(`DELETE FROM role WHERE title = ?`, role, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else console.log(`The ${role} role has been removed`);
+                    return start()
+                });
+
+            })
+}
+function consoleTable(object){
+    const table = cTable.getTable(
+        object
+    );
+    console.log(table);
+}
+
+
+start()
